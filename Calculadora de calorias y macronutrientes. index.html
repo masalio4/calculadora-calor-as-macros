@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Calorías y Macros</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #a8dadc 0%, #457b9d 100%); /* Degradado de azul y verde */
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .card {
+            background-color: #ffffff;
+            border-radius: 1.5rem; /* Bordes más redondeados */
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            max-width: 900px;
+            width: 100%;
+            padding: 2.5rem; /* Más padding */
+        }
+        .input-group label {
+            font-weight: 500;
+            color: #1d3557; /* Azul oscuro para etiquetas */
+            margin-bottom: 0.5rem;
+        }
+        .input-group input, .input-group select {
+            border: 1px solid #a8dadc; /* Borde más suave */
+            border-radius: 0.75rem; /* Bordes redondeados para inputs */
+            padding: 0.75rem 1rem;
+            width: 100%;
+            font-size: 1rem;
+            color: #1d3557;
+            transition: all 0.2s ease-in-out;
+        }
+        .input-group input:focus, .input-group select:focus {
+            outline: none;
+            border-color: #457b9d; /* Azul más oscuro al enfocar */
+            box-shadow: 0 0 0 3px rgba(69, 123, 157, 0.2);
+        }
+        .btn-primary {
+            background-color: #e63946; /* Rojo vibrante */
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+            box-shadow: 0 4px 6px rgba(230, 57, 70, 0.3);
+        }
+        .btn-primary:hover {
+            background-color: #c9303d; /* Rojo más oscuro al pasar el ratón */
+            transform: translateY(-2px);
+        }
+        .btn-primary:active {
+            transform: translateY(0);
+            box-shadow: none;
+        }
+        .results-section {
+            background-color: #f1faee; /* Verde muy claro */
+            border-radius: 1rem;
+            padding: 2rem;
+            border: 1px dashed #a8dadc; /* Borde punteado suave */
+        }
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #e0f2f7; /* Línea divisoria suave */
+        }
+        .result-item:last-child {
+            border-bottom: none;
+        }
+        .result-item span:first-child {
+            font-weight: 500;
+            color: #1d3557;
+        }
+        .result-item span:last-child {
+            font-weight: 600;
+            color: #e63946; /* Rojo para valores importantes */
+        }
+        .macro-bar-container {
+            display: flex;
+            width: 100%;
+            height: 25px;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            margin-top: 1rem;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        .macro-bar {
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-weight: 600;
+            font-size: 0.85rem;
+            transition: width 0.5s ease-out;
+        }
+        .macro-bar.protein { background-color: #457b9d; } /* Azul medio */
+        .macro-bar.carbs { background-color: #f4a261; } /* Naranja */
+        .macro-bar.fat { background-color: #2a9d8f; } /* Verde azulado */
+
+        /* Estilos para el modal de mensaje */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            visibility: hidden;
+            opacity: 0;
+            transition: visibility 0s, opacity 0.3s ease-in-out;
+        }
+        .modal.show {
+            visibility: visible;
+            opacity: 1;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            text-align: center;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            max-width: 400px;
+            width: 90%;
+        }
+        .modal-content h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: #e63946;
+        }
+        .modal-content p {
+            margin-bottom: 1.5rem;
+            color: #1d3557;
+            white-space: pre-wrap; /* Permite saltos de línea en el texto del modal */
+            text-align: left; /* Alinea el texto a la izquierda */
+        }
+        .modal-content button {
+            background-color: #457b9d;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            transition: background-color 0.2s ease-in-out;
+        }
+        .modal-content button:hover {
+            background-color: #1d3557;
+        }
+
+        /* Loading spinner */
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #e63946;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-5">
+    <div class="card p-10 grid grid-cols-1 md:grid-cols-2 gap-8">
+        <!-- Sección de Entrada de Datos -->
+        <div>
+            <h2 class="text-3xl font-bold text-center text-gray-800 mb-8">Calculadora de Calorías y Macros</h2>
+
+            <div class="input-group mb-4">
+                <label for="gender" class="block text-sm mb-2">Género</label>
+                <select id="gender" class="w-full">
+                    <option value="male">Masculino</option>
+                    <option value="female">Femenino</option>
+                </select>
+            </div>
+
+            <div class="input-group mb-4">
+                <label for="age" class="block text-sm mb-2">Edad (años)</label>
+                <input type="number" id="age" placeholder="Ej: 30" class="w-full" min="1" max="120">
+            </div>
+
+            <div class="input-group mb-4">
+                <label for="height" class="block text-sm mb-2">Altura (cm)</label>
+                <input type="number" id="height" placeholder="Ej: 175" class="w-full" min="50" max="250">
+            </div>
+
+            <div class="input-group mb-4">
+                <label for="weight" class="block text-sm mb-2">Peso actual (kg)</label>
+                <input type="number" id="weight" placeholder="Ej: 70" class="w-full" min="20" max="300">
+            </div>
+
+            <div class="input-group mb-4">
+                <label for="activity" class="block text-sm mb-2">Nivel de Actividad Física</label>
+                <select id="activity" class="w-full">
+                    <option value="sedentary">Sedentario (poco o ningún ejercicio)</option>
+                    <option value="light">Ligero (ejercicio ligero 1-3 días/semana)</option>
+                    <option value="moderate">Moderado (ejercicio moderado 3-5 días/semana)</option>
+                    <option value="intense">Intenso (ejercicio intenso 6-7 días/semana)</option>
+                    <option value="very_intense">Muy Intenso (ejercicio muy intenso, trabajo físico)</option>
+                </select>
+            </div>
+
+            <div class="input-group mb-6">
+                <label for="goal" class="block text-sm mb-2">Objetivo</label>
+                <select id="goal" class="w-full">
+                    <option value="maintain">Mantener peso</option>
+                    <option value="cut">Definir / Perder grasa</option>
+                    <option value="bulk">Aumentar masa muscular</option>
+                </select>
+            </div>
+
+            <button id="calculateBtn" class="btn-primary w-full">Calcular</button>
+        </div>
+
+        <!-- Sección de Resultados -->
+        <div id="resultsSection" class="results-section hidden">
+            <h3 class="text-2xl font-bold text-center text-gray-800 mb-6">Tus Resultados</h3>
+
+            <div class="result-item">
+                <span>Calorías de Mantenimiento (TDEE):</span>
+                <span id="maintenanceCalories">0 kcal</span>
+            </div>
+            <div class="result-item mb-4">
+                <span>Calorías Diarias Recomendadas:</span>
+                <span id="recommendedCalories" class="text-red-600 text-lg">0 kcal</span>
+            </div>
+
+            <h4 class="text-xl font-semibold text-gray-700 mt-6 mb-4">Distribución de Macronutrientes</h4>
+
+            <div class="result-item">
+                <span>Proteínas:</span>
+                <span id="proteinGrams">0 g</span>
+            </div>
+            <div class="result-item">
+                <span>Carbohidratos:</span>
+                <span id="carbsGrams">0 g</span>
+            </div>
+            <div class="result-item mb-4">
+                <span>Grasas:</span>
+                <span id="fatGrams">0 g</span>
+            </div>
+
+            <div class="macro-bar-container">
+                <div id="proteinBar" class="macro-bar protein" style="width: 0%;">0%</div>
+                <div id="carbsBar" class="macro-bar carbs" style="width: 0%;">0%</div>
+                <div id="fatBar" class="macro-bar fat" style="width: 0%;">0%</div>
+            </div>
+
+            <div class="mt-8 p-4 bg-blue-50 rounded-lg text-sm text-blue-800 border border-blue-200">
+                <h5 class="font-semibold mb-2">Lógica de Cálculo:</h5>
+                <p>Las calorías se calculan usando la fórmula de Mifflin-St Jeor para la Tasa Metabólica Basal (TMB), que luego se multiplica por un factor de actividad física para obtener el Gasto Energético Diario Total (TDEE). Las calorías recomendadas se ajustan según tu objetivo (déficit para perder grasa, superávit para ganar masa muscular).</p>
+                <p class="mt-2">Los macronutrientes se distribuyen en porcentajes predefinidos basados en tu objetivo, y luego se convierten a gramos (1g Proteína = 4kcal, 1g Carbohidrato = 4kcal, 1g Grasa = 9kcal).</p>
+            </div>
+
+            <!-- Nuevo botón para generar plan de comidas con Gemini API -->
+            <button id="generateMealPlanBtn" class="btn-primary w-full mt-6 flex items-center justify-center">
+                ✨ Generar Plan de Comidas ✨
+                <div id="loadingSpinner" class="spinner ml-3 hidden"></div>
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal para mensajes de error/información y plan de comidas -->
+    <div id="messageModal" class="modal">
+        <div class="modal-content">
+            <h3 id="modalTitle"></h3>
+            <p id="modalMessage"></p>
+            <button id="closeModalBtn">Entendido</button>
+        </div>
+    </div>
+
+    <script>
+        // Función para mostrar el modal
+        function showModal(title, message) {
+            const modal = document.getElementById('messageModal');
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalMessage').textContent = message;
+            modal.classList.add('show');
+        }
+
+        // Función para ocultar el modal
+        function hideModal() {
+            const modal = document.getElementById('messageModal');
+            modal.classList.remove('show');
+        }
+
+        // Event listener para cerrar el modal
+        document.getElementById('closeModalBtn').addEventListener('click', hideModal);
+
+        document.getElementById('calculateBtn').addEventListener('click', () => {
+            const gender = document.getElementById('gender').value;
+            const age = parseFloat(document.getElementById('age').value);
+            const height = parseFloat(document.getElementById('height').value);
+            const weight = parseFloat(document.getElementById('weight').value);
+            const activity = document.getElementById('activity').value;
+            const goal = document.getElementById('goal').value;
+
+            // Validación de entradas
+            if (isNaN(age) || isNaN(height) || isNaN(weight) || age <= 0 || height <= 0 || weight <= 0) {
+                showModal('Error de Entrada', 'Por favor, ingresa valores válidos y positivos para edad, altura y peso.');
+                return;
+            }
+
+            // 1. Calcular Tasa Metabólica Basal (TMB) - Fórmula de Mifflin-St Jeor
+            let bmr;
+            if (gender === 'male') {
+                bmr = (10 * weight) + (6.25 * height) - (5 * age) + 5;
+            } else { // female
+                bmr = (10 * weight) + (6.25 * height) - (5 * age) - 161;
+            }
+
+            // 2. Factores de Actividad Física
+            let activityFactor;
+            switch (activity) {
+                case 'sedentary':
+                    activityFactor = 1.2;
+                    break;
+                case 'light':
+                    activityFactor = 1.375;
+                    break;
+                case 'moderate':
+                    activityFactor = 1.55;
+                    break;
+                case 'intense':
+                    activityFactor = 1.725;
+                    break;
+                case 'very_intense':
+                    activityFactor = 1.9;
+                    break;
+                default:
+                    activityFactor = 1.2; // Valor por defecto
+            }
+
+            // 3. Calcular Gasto Energético Diario Total (TDEE) - Calorías de Mantenimiento
+            const maintenanceCalories = bmr * activityFactor;
+
+            // 4. Ajustar Calorías según el Objetivo
+            let recommendedCalories;
+            let proteinPct, carbsPct, fatPct; // Porcentajes de macronutrientes
+
+            switch (goal) {
+                case 'maintain':
+                    recommendedCalories = maintenanceCalories;
+                    proteinPct = 0.30; // 30%
+                    carbsPct = 0.50;  // 50%
+                    fatPct = 0.20;    // 20%
+                    break;
+                case 'cut':
+                    recommendedCalories = maintenanceCalories - 400; // Déficit de 400 kcal
+                    proteinPct = 0.35; // 35%
+                    carbsPct = 0.35;  // 35%
+                    fatPct = 0.30;    // 30%
+                    break;
+                case 'bulk':
+                    recommendedCalories = maintenanceCalories + 400; // Superávit de 400 kcal
+                    proteinPct = 0.30; // 30%
+                    carbsPct = 0.55;  // 55%
+                    fatPct = 0.15;    // 15%
+                    break;
+                default:
+                    recommendedCalories = maintenanceCalories;
+                    proteinPct = 0.30;
+                    carbsPct = 0.50;
+                    fatPct = 0.20;
+            }
+
+            // Asegurar que las calorías recomendadas no sean negativas
+            if (recommendedCalories < 1200 && goal !== 'cut') { // Mínimo razonable, excepto para corte muy agresivo
+                recommendedCalories = 1200;
+            } else if (recommendedCalories < 1000 && goal === 'cut') {
+                recommendedCalories = 1000; // Mínimo absoluto para corte
+            }
+
+
+            // 5. Calcular Macronutrientes en Gramos
+            const proteinGrams = (recommendedCalories * proteinPct) / 4; // 4 kcal/gramo de proteína
+            const carbsGrams = (recommendedCalories * carbsPct) / 4;   // 4 kcal/gramo de carbohidrato
+            const fatGrams = (recommendedCalories * fatPct) / 9;      // 9 kcal/gramo de grasa
+
+            // 6. Mostrar Resultados
+            document.getElementById('maintenanceCalories').textContent = `${Math.round(maintenanceCalories)} kcal`;
+            document.getElementById('recommendedCalories').textContent = `${Math.round(recommendedCalories)} kcal`;
+            document.getElementById('proteinGrams').textContent = `${Math.round(proteinGrams)} g (${Math.round(proteinPct * 100)}%)`;
+            document.getElementById('carbsGrams').textContent = `${Math.round(carbsGrams)} g (${Math.round(carbsPct * 100)}%)`;
+            document.getElementById('fatGrams').textContent = `${Math.round(fatGrams)} g (${Math.round(fatPct * 100)}%)`;
+
+            // Actualizar barras de macronutrientes
+            document.getElementById('proteinBar').style.width = `${proteinPct * 100}%`;
+            document.getElementById('proteinBar').textContent = `${Math.round(proteinPct * 100)}%`;
+            document.getElementById('carbsBar').style.width = `${carbsPct * 100}%`;
+            document.getElementById('carbsBar').textContent = `${Math.round(carbsPct * 100)}%`;
+            document.getElementById('fatBar').style.width = `${fatPct * 100}%`;
+            document.getElementById('fatBar').textContent = `${Math.round(fatPct * 100)}%`;
+
+
+            // Mostrar la sección de resultados
+            document.getElementById('resultsSection').classList.remove('hidden');
+
+            // Almacenar los resultados para el generador de plan de comidas
+            window.currentRecommendedCalories = Math.round(recommendedCalories);
+            window.currentProteinGrams = Math.round(proteinGrams);
+            window.currentCarbsGrams = Math.round(carbsGrams);
+            window.currentFatGrams = Math.round(fatGrams);
+        });
+
+        // Event listener para el botón de generar plan de comidas
+        document.getElementById('generateMealPlanBtn').addEventListener('click', async () => {
+            const recommendedCalories = window.currentRecommendedCalories;
+            const proteinGrams = window.currentProteinGrams;
+            const carbsGrams = window.currentCarbsGrams;
+            const fatGrams = window.currentFatGrams;
+
+            if (!recommendedCalories) {
+                showModal('Información', 'Por favor, calcula tus calorías y macronutrientes primero.');
+                return;
+            }
+
+            const generateMealPlanBtn = document.getElementById('generateMealPlanBtn');
+            const loadingSpinner = document.getElementById('loadingSpinner');
+
+            // Mostrar spinner y deshabilitar botón
+            loadingSpinner.classList.remove('hidden');
+            generateMealPlanBtn.disabled = true;
+            generateMealPlanBtn.textContent = 'Generando Plan...';
+
+            try {
+                const prompt = `Genera un plan de comidas de un día (desayuno, almuerzo, cena y un snack) para una persona con los siguientes objetivos nutricionales: ${recommendedCalories} calorías, ${proteinGrams}g de proteínas, ${carbsGrams}g de carbohidratos y ${fatGrams}g de grasas. El plan debe ser simple y fácil de seguir. No incluyas explicaciones adicionales, solo el plan de comidas.`;
+
+                let chatHistory = [];
+                chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+                const payload = { contents: chatHistory };
+                const apiKey = ""; // La clave API se proporciona automáticamente en el entorno de Canvas
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    const mealPlanText = result.candidates[0].content.parts[0].text;
+                    showModal('Tu Plan de Comidas Personalizado', mealPlanText);
+                } else {
+                    showModal('Error al Generar', 'No se pudo generar el plan de comidas. Inténtalo de nuevo.');
+                }
+            } catch (error) {
+                console.error('Error al llamar a la API de Gemini:', error);
+                showModal('Error de Conexión', 'Hubo un problema al conectar con el servicio de IA. Por favor, inténtalo más tarde.');
+            } finally {
+                // Ocultar spinner y habilitar botón
+                loadingSpinner.classList.add('hidden');
+                generateMealPlanBtn.disabled = false;
+                generateMealPlanBtn.innerHTML = '✨ Generar Plan de Comidas ✨ <div id="loadingSpinner" class="spinner ml-3 hidden"></div>';
+            }
+        });
+    </script>
+</body>
+</html>
