@@ -475,7 +475,74 @@
                 generateMealPlanBtn.innerHTML = '✨ Generar Plan de Comidas ✨ <div id="loadingSpinner" class="spinner ml-3 hidden"></div>';
             }
         });
-    </script>
-</body>
+  </script>
+</body>document.addEventListener('DOMContentLoaded', () => {
+    const formulario = document.getElementById('calculadora-form');
+    const resultadoDiv = document.getElementById('resultado');
+
+    formulario.addEventListener('submit', function(event) {
+        event.preventDefault();
+
+        // 1. Obtener los valores del formulario
+        const edad = parseInt(document.getElementById('edad').value);
+        const peso = parseFloat(document.getElementById('peso').value);
+        const altura = parseFloat(document.getElementById('altura').value);
+        const sexo = document.querySelector('input[name="sexo"]:checked').value;
+        const actividad = document.getElementById('actividad').value;
+
+        // 2. Calcular el TMB (Tasa Metabólica Basal) usando la fórmula de Mifflin-St. Jeor
+        let tmb;
+        if (sexo === 'femenino') {
+            tmb = (10 * peso) + (6.25 * altura) - (5 * edad) - 161;
+        } else {
+            tmb = (10 * peso) + (6.25 * altura) - (5 * edad) + 5;
+        }
+
+        // 3. Calcular el gasto calórico total (GCT)
+        let factorActividad;
+        switch (actividad) {
+            case 'sedentaria':
+                factorActividad = 1.2;
+                break;
+            case 'ligera':
+                factorActividad = 1.375;
+                break;
+            case 'moderada':
+                factorActividad = 1.55;
+                break;
+            case 'alta':
+                factorActividad = 1.725;
+                break;
+            case 'muy-alta':
+                factorActividad = 1.9;
+                break;
+            default:
+                factorActividad = 1.2;
+        }
+        const gct = tmb * factorActividad;
+
+        // 4. Calcular los macronutrientes (con un ejemplo de distribución 40% Carb, 30% Prot, 30% Grasas)
+        const caloriasCarbohidratos = gct * 0.40;
+        const caloriasProteinas = gct * 0.30;
+        const caloriasGrasas = gct * 0.30;
+
+        const gramosCarbohidratos = caloriasCarbohidratos / 4;
+        const gramosProteinas = caloriasProteinas / 4;
+        const gramosGrasas = caloriasGrasas / 9;
+
+        // 5. Mostrar los resultados en la página
+        resultadoDiv.innerHTML = `
+            <h2>Resultados</h2>
+            <p>Tu Gasto Calórico Total (GCT) es de: <strong>${gct.toFixed(0)} kcal</strong></p>
+            <p>Tu distribución de macros (ejemplo):</p>
+            <ul>
+                <li>Proteínas: <strong>${gramosProteinas.toFixed(0)} g</strong></li>
+                <li>Carbohidratos: <strong>${gramosCarbohidratos.toFixed(0)} g</strong></li>
+                <li>Grasas: <strong>${gramosGrasas.toFixed(0)} g</strong></li>
+            </ul>
+        `;
+    });
+});
 </html>
+
 
